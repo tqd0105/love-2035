@@ -1,7 +1,20 @@
-import type { Role } from "@/generated/prisma/client"
+import type { Role, Visibility, TimelineType } from "@/generated/prisma/client"
 import { prisma } from "@/src/lib/prisma"
 import { AppError, ErrorCode } from "@/src/lib/errors"
 import { visibilityWhereClause } from "@/src/services/visibility.service"
+
+/**
+ * Input for creating a new timeline event.
+ */
+export interface CreateTimelineInput {
+  title: string
+  description?: string
+  timelineType: TimelineType
+  date: Date
+  visibility: Visibility
+  isHighlighted?: boolean
+  eventId?: string
+}
 
 /**
  * Get a single timeline event by ID.
@@ -54,5 +67,35 @@ export async function getTimelineEvents(role: Role) {
       eventId: true,
     },
     orderBy: { date: "desc" },
+  })
+}
+
+/**
+ * Create a new timeline event.
+ * Mode guard is enforced by middleware — this function only handles DB logic.
+ */
+export async function createTimelineEvent(input: CreateTimelineInput) {
+  return prisma.timelineEvent.create({
+    data: {
+      title: input.title,
+      description: input.description,
+      timelineType: input.timelineType,
+      date: input.date,
+      visibility: input.visibility,
+      isHighlighted: input.isHighlighted ?? false,
+      eventId: input.eventId,
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      timelineType: true,
+      date: true,
+      visibility: true,
+      isHighlighted: true,
+      createdAt: true,
+      updatedAt: true,
+      eventId: true,
+    },
   })
 }
