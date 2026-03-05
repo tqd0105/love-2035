@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { AppError, ErrorCode } from "@/src/lib/errors"
+import { logger } from "@/src/lib/logger"
 
 /**
  * Standard API success response.
@@ -35,6 +36,6 @@ export function handleError(err: unknown) {
     return errorResponse(err.code, err.message, err.statusCode)
   }
 
-  console.error("Unhandled error:", err)
+  logger.error({ err }, "Unhandled error")
   return errorResponse(ErrorCode.INTERNAL_ERROR, "Internal server error", 500)
 }

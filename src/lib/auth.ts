@@ -1,16 +1,13 @@
 import { SignJWT, jwtVerify } from "jose"
 import { cookies } from "next/headers"
 import type { Role } from "@/generated/prisma/client"
+import { env } from "@/src/lib/env"
 
 const SESSION_COOKIE = "session"
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 function getSecret(): Uint8Array {
-  const secret = process.env["JWT_SECRET"]
-  if (!secret) {
-    throw new Error("JWT_SECRET environment variable is not set")
-  }
-  return new TextEncoder().encode(secret)
+  return new TextEncoder().encode(env.JWT_SECRET)
 }
 
 export interface SessionPayload {

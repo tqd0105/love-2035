@@ -5,6 +5,8 @@ import { createWish } from "@/src/services/wedding.service"
 import { withModeGuard } from "@/src/middleware/mode.middleware"
 import { rateLimit } from "@/src/lib/rate-limit"
 import { invalidateCache } from "@/src/lib/cache"
+import { logger } from "@/src/lib/logger"
+import { createWishSchema, validateBody } from "@/src/lib/validations"
 
 const checkRateLimit = rateLimit("wishes-create", 10, 60_000) // 10 req/min per IP
 
@@ -24,36 +26,21 @@ const handler = withModeGuard("GUEST_INTERACTION")(async (request, context) => {
     if (rateLimited) return rateLimited
 
     const body = await request.json().catch(() => null)
-    if (!body) {
-      throw new AppError(ErrorCode.VALIDATION_ERROR, "Request body is required", 400)
-    }
-
-    const { name, message, photoUrl } = body
-
-    if (!name || typeof name !== "string" || !name.trim()) {
-      throw new AppError(ErrorCode.VALIDATION_ERROR, "Name is required", 400)
-    }
-
-    if (!message || typeof message !== "string" || !message.trim()) {
-      throw new AppError(ErrorCode.VALIDATION_ERROR, "Message is required", 400)
-    }
-
-    if (message.trim().length > 1000) {
-      throw new AppError(ErrorCode.VALIDATION_ERROR, "Message must be at most 1000 characters", 400)
-    }
-
-    if (photoUrl !== undefined && typeof photoUrl !== "string") {
-      throw new AppError(ErrorCode.VALIDATION_ERROR, "photoUrl must be a string", 400)
-    }
+    const { name, message, photoUrl } = validateBody(createWishSchema, body)
 
     const wish = await createWish({
-      name: name.trim(),
-      message: message.trim(),
-      photoUrl: photoUrl?.trim(),
+      name,
+      message,
+      photoUrl,
     })
 
     // Invalidate wishes list cache on new wish
     invalidateCache("wedding:wishes")
+
+    logger.info(
+      { endpoint: "/api/wedding/wishes/create", userId: context.session.userId, wishId: wish.id },
+      "Wedding wish created",
+    )
 
     return successResponse({ wish }, 201)
   } catch (err) {

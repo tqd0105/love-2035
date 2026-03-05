@@ -9,10 +9,11 @@ import { validateFile, uploadMedia } from "@/src/services/media.service"
 import { withModeGuard } from "@/src/middleware/mode.middleware"
 import { rateLimit } from "@/src/lib/rate-limit"
 import { checkPayloadSize } from "@/src/lib/payload-guard"
+import { logger } from "@/src/lib/logger"
+import { mediaVisibilitySchema, validateBody } from "@/src/lib/validations"
 
 const checkRateLimit = rateLimit("media-upload", 10, 60_000) // 10 req/min per IP
 
-const VALID_VISIBILITIES: Visibility[] = ["PUBLIC", "APPROVED_GUEST", "COUPLE", "PASSWORD_LOCKED"]
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads")
 
 /**
@@ -55,13 +56,7 @@ const handler = withModeGuard("CREATE_MEDIA")(async (request, context) => {
     }
 
     const visibility = (formData.get("visibility") as string) ?? "COUPLE"
-    if (!VALID_VISIBILITIES.includes(visibility as Visibility)) {
-      throw new AppError(
-        ErrorCode.VALIDATION_ERROR,
-        `visibility must be one of: ${VALID_VISIBILITIES.join(", ")}`,
-        400,
-      )
-    }
+    const validatedVisibility = validateBody(mediaVisibilitySchema, visibility)
 
     // Validate file type and size
     const mediaType = validateFile(file.type, file.size)
@@ -82,9 +77,14 @@ const handler = withModeGuard("CREATE_MEDIA")(async (request, context) => {
     const media = await uploadMedia({
       url: `/uploads/${uniqueName}`,
       mediaType,
-      visibility: visibility as Visibility,
+      visibility: validatedVisibility as Visibility,
       uploadedBy: context.session.userId,
     })
+
+    logger.info(
+      { endpoint: "/api/media/upload", userId: context.session.userId, mediaType, mediaId: media.id },
+      "Media uploaded",
+    )
 
     return successResponse({ media }, 201)
   } catch (err) {

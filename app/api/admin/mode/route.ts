@@ -4,6 +4,7 @@ import { successResponse, errorResponse, handleError } from "@/src/lib/response"
 import { AppError, ErrorCode } from "@/src/lib/errors"
 import { getSystemMode, setSystemMode, getSystemConfig } from "@/src/services/admin.service"
 import { withAuth } from "@/src/middleware/auth.middleware"
+import { logger } from "@/src/lib/logger"
 
 const VALID_MODES: Mode[] = ["RELATIONSHIP", "WEDDING", "ARCHIVE"]
 
@@ -54,6 +55,9 @@ export async function PUT(request: NextRequest) {
       }
 
       const updated = await setSystemMode(mode as Mode)
+
+      logger.info({ endpoint: "/api/admin/mode", userId: session.userId, mode: updated }, "System mode changed")
+
       return successResponse({ mode: updated })
     } catch (err) {
       return handleError(err)
