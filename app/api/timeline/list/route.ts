@@ -4,9 +4,9 @@ import { getTimelineEvents, getTimelineEventsByYear } from "@/src/services/timel
 import { withVisibilityFilter } from "@/src/middleware/visibility.middleware"
 
 /**
- * GET /api/timeline
+ * GET /api/timeline/list
  *
- * Return sorted timeline events with visibility applied.
+ * List timeline events sorted chronologically (date ASC).
  *
  * Query params:
  *   ?year=2025       — filter by year

@@ -287,3 +287,17 @@ model VaultItem {
 
   @@map("vault_items")
 }
+
+//
+// WEDDING SYSTEM
+//
+
+model WeddingWish {
+  id        String   @id @default(uuid())
+  name      String
+  message   String
+  photoUrl  String?
+  createdAt DateTime @default(now())
+
+  @@map("wedding_wishes")
+}
