@@ -7,6 +7,10 @@ import { successResponse, handleError } from "@/src/lib/response"
 import { AppError, ErrorCode } from "@/src/lib/errors"
 import { validateFile, uploadMedia } from "@/src/services/media.service"
 import { withModeGuard } from "@/src/middleware/mode.middleware"
+import { rateLimit } from "@/src/lib/rate-limit"
+import { checkPayloadSize } from "@/src/lib/payload-guard"
+
+const checkRateLimit = rateLimit("media-upload", 10, 60_000) // 10 req/min per IP
 
 const VALID_VISIBILITIES: Visibility[] = ["PUBLIC", "APPROVED_GUEST", "COUPLE", "PASSWORD_LOCKED"]
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads")
@@ -27,6 +31,12 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads")
  */
 const handler = withModeGuard("CREATE_MEDIA")(async (request, context) => {
   try {
+    const tooLarge = checkPayloadSize(request)
+    if (tooLarge) return tooLarge
+
+    const rateLimited = checkRateLimit(request)
+    if (rateLimited) return rateLimited
+
     // Only COUPLE or ADMIN can upload
     if (context.session.role !== "COUPLE" && context.session.role !== "ADMIN") {
       return handleError(

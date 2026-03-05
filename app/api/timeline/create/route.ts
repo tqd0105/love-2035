@@ -4,6 +4,7 @@ import { successResponse, handleError } from "@/src/lib/response"
 import { AppError, ErrorCode } from "@/src/lib/errors"
 import { createTimelineEvent } from "@/src/services/timeline.service"
 import { withModeGuard } from "@/src/middleware/mode.middleware"
+import { invalidateCacheByPrefix } from "@/src/lib/cache"
 
 /**
  * POST /api/timeline/create
@@ -84,6 +85,9 @@ const handler = withModeGuard("CREATE_TIMELINE")(async (request, context) => {
       isHighlighted: isHighlighted ?? false,
       eventId,
     })
+
+    // Invalidate all timeline caches on new event
+    invalidateCacheByPrefix("timeline")
 
     return successResponse({ timelineEvent }, 201)
   } catch (err) {

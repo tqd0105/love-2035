@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { successResponse, handleError } from "@/src/lib/response"
 import { AppError, ErrorCode } from "@/src/lib/errors"
 import { getMediaById, deleteMedia } from "@/src/services/media.service"
@@ -29,7 +29,10 @@ const getHandler = async (request: NextRequest) => {
 
       assertAccess(session.role, media.visibility)
 
-      return successResponse({ media })
+      const response = successResponse({ media })
+      // Cache media metadata responses for 5 minutes (immutable content)
+      response.headers.set("Cache-Control", "private, max-age=300")
+      return response
     } catch (err) {
       return handleError(err)
     }

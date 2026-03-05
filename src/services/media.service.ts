@@ -44,8 +44,8 @@ const ALLOWED_MIME_TYPES: Record<string, MediaType> = {
   "audio/ogg": "AUDIO",
 }
 
-/** Max file size: 10 MB */
-const MAX_FILE_SIZE = 10 * 1024 * 1024
+/** Max file size: 5 MB */
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 
 // ── Service functions ───────────────────────────────────────────────
 
@@ -110,16 +110,47 @@ export async function getMediaById(id: string) {
   return media
 }
 
+/** Lightweight select for list endpoints — avoids sending large metadata. */
+const mediaListSelect = {
+  id: true,
+  url: true,
+  mediaType: true,
+} as const
+
 /**
  * List all media visible to the given role.
+ * Returns only id, url, mediaType for performance.
  * Sorted by createdAt descending (newest first).
  */
-export async function listMedia(role: Role) {
-  return prisma.media.findMany({
-    where: visibilityWhereClause(role),
-    select: mediaSelect,
-    orderBy: { createdAt: "desc" },
-  })
+export async function listMedia(
+  role: Role,
+  pagination?: { page: number; limit: number },
+) {
+  const page = pagination?.page ?? 1
+  const limit = pagination?.limit ?? 50
+
+  const where = visibilityWhereClause(role)
+
+  const [media, total] = await Promise.all([
+    prisma.media.findMany({
+      where,
+      select: mediaListSelect,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.media.count({ where }),
+  ])
+
+  return {
+    media,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  }
 }
 
 /**

@@ -2,17 +2,21 @@ import { NextRequest } from "next/server"
 import { successResponse, handleError } from "@/src/lib/response"
 import { getTimelineEvents, getTimelineEventsByYear } from "@/src/services/timeline.service"
 import { withVisibilityFilter } from "@/src/middleware/visibility.middleware"
+import { cached } from "@/src/lib/cache"
+
+const CACHE_TTL = 60_000 // 60 seconds
 
 /**
  * GET /api/timeline
  *
  * Return sorted timeline events with visibility applied.
+ * Responses are cached for 60 seconds.
  *
  * Query params:
  *   ?year=2025       — filter by year
  *   ?page=1&limit=50 — pagination
  *
- * Flow: Auth → visibility filter (DB-level) → respond
+ * Flow: Auth → visibility filter (DB-level) → cache → respond
  */
 const handler = withVisibilityFilter(async (request, session) => {
   try {
@@ -26,11 +30,17 @@ const handler = withVisibilityFilter(async (request, session) => {
       if (isNaN(year) || year < 1900 || year > 2100) {
         return successResponse({ events: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } })
       }
-      const result = await getTimelineEventsByYear(session.role, year, { page, limit })
+      const cacheKey = `timeline:${session.role}:year:${year}:${page}:${limit}`
+      const result = await cached(cacheKey, CACHE_TTL, () =>
+        getTimelineEventsByYear(session.role, year, { page, limit }),
+      )
       return successResponse(result)
     }
 
-    const result = await getTimelineEvents(session.role, { page, limit })
+    const cacheKey = `timeline:${session.role}:all:${page}:${limit}`
+    const result = await cached(cacheKey, CACHE_TTL, () =>
+      getTimelineEvents(session.role, { page, limit }),
+    )
     return successResponse(result)
   } catch (err) {
     return handleError(err)

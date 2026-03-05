@@ -105,14 +105,35 @@ export async function getEventById(id: string) {
  * Applies visibility filtering at database level.
  * Returns events sorted by date ascending (upcoming first).
  */
-export async function listEvents(role: Role) {
-  return prisma.event.findMany({
-    where: {
-      ...visibilityWhereClause(role),
+export async function listEvents(
+  role: Role,
+  pagination?: { page: number; limit: number },
+) {
+  const page = pagination?.page ?? 1
+  const limit = pagination?.limit ?? 50
+
+  const where = visibilityWhereClause(role)
+
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      select: eventSelect,
+      orderBy: { date: "asc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.event.count({ where }),
+  ])
+
+  return {
+    events,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
     },
-    select: eventSelect,
-    orderBy: { date: "asc" },
-  })
+  }
 }
 
 /**

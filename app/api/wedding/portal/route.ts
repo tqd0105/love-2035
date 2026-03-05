@@ -1,22 +1,21 @@
 import { NextRequest } from "next/server"
 import { successResponse, errorResponse, handleError } from "@/src/lib/response"
 import { ErrorCode } from "@/src/lib/errors"
-import { listWishes } from "@/src/services/wedding.service"
 import { getSystemMode } from "@/src/services/mode.service"
+import { listWishes } from "@/src/services/wedding.service"
 import { withAuth } from "@/src/middleware/auth.middleware"
 import { cached } from "@/src/lib/cache"
 
 const CACHE_TTL = 30_000 // 30 seconds
 
 /**
- * GET /api/wedding/wishes/list
+ * GET /api/wedding/portal
  *
- * List all wedding wishes. Wishes are PUBLIC.
- * Responses are cached for 30 seconds.
+ * Wedding portal data endpoint.
+ * Returns aggregated wedding information when mode = WEDDING.
+ * Cached for 30 seconds.
  *
- * Flow: Auth → check mode = WEDDING → cache → respond
- *
- * Only available when system mode is WEDDING.
+ * Flow: Auth → check mode = WEDDING → aggregate → respond
  */
 export async function GET(request: NextRequest) {
   return withAuth(request, async (_req, _session) => {
@@ -26,13 +25,22 @@ export async function GET(request: NextRequest) {
       if (mode !== "WEDDING") {
         return errorResponse(
           ErrorCode.FORBIDDEN,
-          "Wedding wishes are only available in WEDDING mode",
+          "Wedding portal is only available in WEDDING mode",
           403,
         )
       }
 
-      const wishes = await cached("wedding:wishes", CACHE_TTL, () => listWishes())
-      return successResponse({ wishes })
+      const portal = await cached("wedding:portal", CACHE_TTL, async () => {
+        const wishes = await listWishes()
+        return {
+          mode: "WEDDING" as const,
+          weddingEnabled: true,
+          wishes,
+          wishCount: wishes.length,
+        }
+      })
+
+      return successResponse({ portal })
     } catch (err) {
       return handleError(err)
     }

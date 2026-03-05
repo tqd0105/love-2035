@@ -31,7 +31,7 @@ async function main() {
   // 2. Admin user
   await prisma.user.upsert({
     where: { email: "admin@love2035.com" },
-    update: {},
+    update: { passwordHash: defaultPassword },
     create: {
       email: "admin@love2035.com",
       passwordHash: defaultPassword,
@@ -43,7 +43,7 @@ async function main() {
   // 3. Couple users
   const personA = await prisma.user.upsert({
     where: { email: "persona@love2035.com" },
-    update: {},
+    update: { passwordHash: couplePassword },
     create: {
       email: "persona@love2035.com",
       passwordHash: couplePassword,
@@ -53,7 +53,7 @@ async function main() {
 
   const personB = await prisma.user.upsert({
     where: { email: "personb@love2035.com" },
-    update: {},
+    update: { passwordHash: couplePassword },
     create: {
       email: "personb@love2035.com",
       passwordHash: couplePassword,

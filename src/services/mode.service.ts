@@ -1,6 +1,7 @@
 import type { Mode } from "@/generated/prisma/client"
 import { prisma } from "@/src/lib/prisma"
 import { AppError, ErrorCode } from "@/src/lib/errors"
+import { invalidateCacheByPrefix } from "@/src/lib/cache"
 
 /**
  * In-memory mode cache.
@@ -71,12 +72,20 @@ export async function setSystemMode(mode: Mode): Promise<Mode> {
 
   const updated = await prisma.systemConfig.update({
     where: { id: config.id },
-    data: { mode },
+    data: {
+      mode,
+      weddingEnabled: mode === "WEDDING",
+      archiveEnabled: mode === "ARCHIVE",
+    },
     select: { mode: true },
   })
 
-  // Invalidate cache so next request picks up the new mode
+  // Invalidate mode cache
   invalidateModeCache()
+
+  // Invalidate content caches so responses reflect new mode restrictions
+  invalidateCacheByPrefix("timeline")
+  invalidateCacheByPrefix("wedding")
 
   return updated.mode
 }
