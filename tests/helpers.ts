@@ -54,7 +54,7 @@ export function createTestRequest(
   path: string,
   init?: RequestInit,
 ): NextRequest {
-  return new NextRequest(new URL(path, "http://localhost:3000"), init)
+  return new NextRequest(new URL(path, "http://localhost:3000"), init as never)
 }
 
 export function jsonRequest(
