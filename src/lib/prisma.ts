@@ -3,6 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { logger } from "@/src/lib/logger"
 import { env } from "@/src/lib/env"
 
+// Supabase uses self-signed certificates
+if (env.DATABASE_URL?.includes("supabase")) {
+  process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+}
+
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 2_000
 

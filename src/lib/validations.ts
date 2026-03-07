@@ -79,6 +79,31 @@ export const mediaVisibilitySchema = z.enum(
   },
 )
 
+export const guestRequestSchema = z.object({
+  name: z
+    .string({ error: "Name is required" })
+    .trim()
+    .min(1, "Name cannot be empty")
+    .max(100, "Name must be at most 100 characters"),
+  email: z
+    .string({ error: "Email is required" })
+    .trim()
+    .min(1, "Email cannot be empty")
+    .email("Invalid email format"),
+  relationship: z.enum(["friend", "family", "other"], {
+    error: "Relationship must be one of: friend, family, other",
+  }),
+  password: z
+    .string({ error: "Password is required" })
+    .min(8, "Password must be at least 8 characters"),
+  message: z
+    .string()
+    .trim()
+    .max(500, "Message must be at most 500 characters")
+    .optional()
+    .transform((v) => v || null),
+})
+
 // ── Helper ─────────────────────────────────────────────────────
 
 export function validateBody<T>(schema: z.ZodSchema<T>, data: unknown): T {

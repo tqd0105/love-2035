@@ -1,7 +1,5 @@
 import type { Metadata } from "next"
-import { GalleryHeader } from "@/components/gallery/GalleryHeader"
-import { GalleryContainer } from "@/components/gallery/GalleryContainer"
-import { ScrollReveal } from "@/components/ui/ScrollReveal"
+import { GalleryGuarded } from "@/components/gallery/GalleryGuarded"
 
 export const metadata: Metadata = {
   title: "Gallery | Love 2035",
@@ -9,12 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function GalleryPage() {
-  return (
-    <div className="flex flex-col">
-      <GalleryHeader />
-      <ScrollReveal>
-        <GalleryContainer />
-      </ScrollReveal>
-    </div>
-  )
+  return <GalleryGuarded />
 }

@@ -4,6 +4,7 @@ import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { QueryProvider } from "@/components/providers/query-provider"
 import { SmoothScroll } from "@/components/providers/smooth-scroll"
+import { AuthProvider } from "@/context/AuthContext"
 import "./globals.css"
 
 const serif = Playfair_Display({
@@ -33,12 +34,14 @@ export default function RootLayout({
         className={`${serif.variable} ${sans.variable} min-h-screen bg-gradient-to-b from-rose-50/60 via-background to-background font-sans antialiased`}
       >
         <QueryProvider>
-          <SmoothScroll />
-          <Header />
-          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-            {children}
-          </main>
-          <Footer />
+          <AuthProvider>
+            <SmoothScroll />
+            <Header />
+            <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
+              {children}
+            </main>
+            <Footer />
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

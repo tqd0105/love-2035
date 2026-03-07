@@ -12,8 +12,14 @@ const prisma = new PrismaClient({ adapter })
 const SALT_ROUNDS = 12
 
 async function main() {
-  const adminPassword = await bcrypt.hash("Love2035@admin", SALT_ROUNDS)
-  const couplePassword = await bcrypt.hash("Love2035@couple", SALT_ROUNDS)
+  const adminPw = process.env["SEED_ADMIN_PASSWORD"]
+  const couplePw = process.env["SEED_COUPLE_PASSWORD"]
+  if (!adminPw || !couplePw) {
+    throw new Error("Missing SEED_ADMIN_PASSWORD or SEED_COUPLE_PASSWORD in .env")
+  }
+
+  const adminPassword = await bcrypt.hash(adminPw, SALT_ROUNDS)
+  const couplePassword = await bcrypt.hash(couplePw, SALT_ROUNDS)
 
   // ── 1. System Config ──────────────────────────────────────
   await prisma.systemConfig.upsert({

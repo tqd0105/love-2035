@@ -1,12 +1,38 @@
 "use client"
 
+import { useState } from "react"
 import { motion } from "framer-motion"
-import { IconMoodSad, IconLoader2 } from "@tabler/icons-react"
+import { IconMoodSad, IconLoader2, IconPlus } from "@tabler/icons-react"
 import { useTimeline } from "@/hooks/useTimeline"
+import { useCapabilities } from "@/hooks/useCapabilities"
+import { useCreateEvent, useUpdateEvent, useDeleteEvent } from "@/hooks/useAdminEvents"
 import { TimelineEventCard } from "./TimelineEventCard"
+import { EventFormDialog } from "./EventFormDialog"
+import { EventDeleteDialog } from "./EventDeleteDialog"
+import { Button } from "@/components/ui/button"
+
+export interface EventFormData {
+  title: string
+  description: string
+  eventType: string
+  date: string
+  visibility: string
+}
 
 export function TimelineContainer() {
   const { data, isLoading, isError } = useTimeline()
+  const { can } = useCapabilities()
+  const createEvent = useCreateEvent()
+  const updateEvent = useUpdateEvent()
+  const deleteEvent = useDeleteEvent()
+
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editEvent, setEditEvent] = useState<{ id: string } & EventFormData | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  const canCreate = can("create_event")
+  const canEdit = can("edit_event")
+  const canDelete = can("delete_event")
 
   if (isLoading) {
     return (
@@ -44,14 +70,74 @@ export function TimelineContainer() {
     )
   }
 
+  function handleCreate(formData: EventFormData) {
+    createEvent.mutate(
+      {
+        ...formData,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        date: new Date(formData.date).toISOString(),
+      },
+      { onSuccess: () => setCreateOpen(false) },
+    )
+  }
+
+  function handleEdit(formData: EventFormData) {
+    if (!editEvent) return
+    updateEvent.mutate(
+      {
+        id: editEvent.id,
+        ...formData,
+        title: formData.title.trim(),
+        description: formData.description.trim() || undefined,
+        date: new Date(formData.date).toISOString(),
+      },
+      { onSuccess: () => setEditEvent(null) },
+    )
+  }
+
+  function handleDelete() {
+    if (!deleteId) return
+    deleteEvent.mutate(deleteId, { onSettled: () => setDeleteId(null) })
+  }
+
   return (
     <section className="relative py-12">
+      {canCreate && (
+        <div className="mb-8 flex justify-center">
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="rounded-full bg-gradient-to-r from-rose-500 to-pink-500 px-6 shadow-lg shadow-rose-500/25 hover:from-rose-600 hover:to-pink-600"
+          >
+            <IconPlus size={18} className="mr-1.5" />
+            Add Event
+          </Button>
+        </div>
+      )}
+
       {/* Central vertical line — md+ */}
       <div className="pointer-events-none absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-pink-300/30 to-transparent md:block" />
 
       <div className="flex flex-col gap-12 md:gap-16">
         {events.map((event, i) => (
-          <TimelineEventCard key={event.id} event={event} index={i} />
+          <TimelineEventCard
+            key={event.id}
+            event={event}
+            index={i}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            onEdit={() =>
+              setEditEvent({
+                id: event.eventId ?? event.id,
+                title: event.title,
+                description: event.description ?? "",
+                eventType: "CUSTOM",
+                date: new Date(event.date).toISOString().slice(0, 10),
+                visibility: event.visibility,
+              })
+            }
+            onDelete={() => setDeleteId(event.eventId ?? event.id)}
+          />
         ))}
       </div>
 
@@ -67,6 +153,33 @@ export function TimelineContainer() {
           <span className="text-sm text-white">♥</span>
         </div>
       </motion.div>
+
+      {/* Create Dialog */}
+      <EventFormDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        title="Add Event"
+        onSubmit={handleCreate}
+        isPending={createEvent.isPending}
+      />
+
+      {/* Edit Dialog */}
+      <EventFormDialog
+        open={!!editEvent}
+        onOpenChange={(open) => !open && setEditEvent(null)}
+        title="Edit Event"
+        defaultValues={editEvent ?? undefined}
+        onSubmit={handleEdit}
+        isPending={updateEvent.isPending}
+      />
+
+      {/* Delete Dialog */}
+      <EventDeleteDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={handleDelete}
+        isPending={deleteEvent.isPending}
+      />
     </section>
   )
 }

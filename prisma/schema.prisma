@@ -134,12 +134,26 @@ model GuestRequest {
   email        String
   relationship String
   message      String?
+  passwordHash String?
   status       String
   createdAt    DateTime @default(now())
   approvedAt   DateTime?
   approvedBy   String?
 
   @@map("guest_requests")
+}
+
+model InviteToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  label     String?
+  maxUses   Int       @default(1)
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  createdBy String
+  createdAt DateTime  @default(now())
+
+  @@map("invite_tokens")
 }
 
 //

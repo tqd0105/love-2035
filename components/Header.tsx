@@ -10,7 +10,14 @@ import {
   IconMail,
   IconConfetti,
   IconUser,
+  IconHome,
+  IconSettings,
+  IconLogin,
+  IconLogout,
+  IconUserPlus,
 } from "@tabler/icons-react"
+import { useAuth } from "@/context/AuthContext"
+import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import {
   Sheet,
@@ -22,17 +29,44 @@ import {
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 
-const navLinks = [
-  { href: "/timeline", label: "Timeline", icon: IconTimeline },
-  { href: "/gallery", label: "Gallery", icon: IconPhoto },
-  { href: "/letters", label: "Letters", icon: IconMail },
-  { href: "/wedding", label: "Wedding", icon: IconConfetti },
-  { href: "/profile", label: "Profile", icon: IconUser },
-] as const
+type NavLink = { href: string; label: string; icon: typeof IconHeart }
+
+function getNavLinks(role: string | undefined): NavLink[] {
+  switch (role) {
+    case "ADMIN":
+      return [
+        { href: "/admin", label: "Admin", icon: IconSettings },
+        { href: "/timeline", label: "Timeline", icon: IconTimeline },
+        { href: "/gallery", label: "Gallery", icon: IconPhoto },
+      ]
+    case "COUPLE":
+      return [
+        { href: "/timeline", label: "Timeline", icon: IconTimeline },
+        { href: "/gallery", label: "Gallery", icon: IconPhoto },
+        { href: "/letters", label: "Letters", icon: IconMail },
+        { href: "/profile", label: "Profile", icon: IconUser },
+      ]
+    case "APPROVED_GUEST":
+      return [
+        { href: "/timeline", label: "Timeline", icon: IconTimeline },
+        { href: "/gallery", label: "Gallery", icon: IconPhoto },
+        { href: "/wedding", label: "Wedding", icon: IconConfetti },
+      ]
+    default:
+      return [
+        { href: "/", label: "Home", icon: IconHome },
+        { href: "/wedding", label: "Wedding", icon: IconConfetti },
+        { href: "/timeline", label: "Timeline", icon: IconTimeline },
+        { href: "/request-access", label: "Request Access", icon: IconUserPlus },
+      ]
+  }
+}
 
 export function Header() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const navLinks = getNavLinks(user?.role)
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
@@ -63,6 +97,34 @@ export function Header() {
               </Button>
             </Link>
           ))}
+
+          <Separator orientation="vertical" className="mx-1 h-5" />
+
+          {user ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
+              onClick={() => logout()}
+            >
+              <IconLogout size={16} />
+              Logout
+            </Button>
+          ) : (
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "gap-1.5 text-muted-foreground hover:text-foreground",
+                  pathname === "/login" && "bg-primary/10 text-primary hover:text-primary",
+                )}
+              >
+                <IconLogin size={16} />
+                Login
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile nav */}
@@ -97,6 +159,32 @@ export function Header() {
                   </Button>
                 </Link>
               ))}
+
+              <Separator className="my-2" />
+
+              {user ? (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => { logout(); setOpen(false) }}
+                >
+                  <IconLogout size={16} />
+                  Logout
+                </Button>
+              ) : (
+                <Link href="/login" onClick={() => setOpen(false)}>
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start gap-2 text-muted-foreground hover:text-foreground",
+                      pathname === "/login" && "bg-primary/10 text-primary hover:text-primary",
+                    )}
+                  >
+                    <IconLogin size={16} />
+                    Login
+                  </Button>
+                </Link>
+              )}
             </nav>
           </SheetContent>
         </Sheet>

@@ -85,7 +85,7 @@ export function WeddingHero() {
               Xem Timeline
             </Button>
           </Link>
-          <Link href="/wishes">
+          <Link href="#guest-actions">
             <Button
               size="lg"
               variant="outline"

@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
-import { LettersHeader } from "@/components/letters/LettersHeader"
-import { LettersContainer } from "@/components/letters/LettersContainer"
+import { LettersGuarded } from "@/components/letters/LettersGuarded"
 
 export const metadata: Metadata = {
   title: "Letters | Love 2035",
@@ -8,10 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function LettersPage() {
-  return (
-    <div className="flex flex-col">
-      <LettersHeader />
-      <LettersContainer />
-    </div>
-  )
+  return <LettersGuarded />
 }

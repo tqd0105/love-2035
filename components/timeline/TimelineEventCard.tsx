@@ -8,6 +8,7 @@ import {
   IconPhoto,
   IconX,
 } from "@tabler/icons-react"
+import { IconPencil, IconTrash } from "@tabler/icons-react"
 import type { TimelineEvent } from "@/hooks/useTimeline"
 
 /* ── Gradient palette rotated per card ── */
@@ -30,9 +31,13 @@ const placeholderImages = [
 interface TimelineEventCardProps {
   event: TimelineEvent
   index: number
+  canEdit?: boolean
+  canDelete?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
-export function TimelineEventCard({ event, index }: TimelineEventCardProps) {
+export function TimelineEventCard({ event, index, canEdit, canDelete, onEdit, onDelete }: TimelineEventCardProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const palette = cardGradients[index % cardGradients.length]!
   const imgGradient = placeholderImages[index % placeholderImages.length]!
@@ -116,6 +121,29 @@ export function TimelineEventCard({ event, index }: TimelineEventCardProps) {
                 <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-orange-100 px-3 py-1 text-xs font-medium text-amber-700">
                   <IconStar size={12} />
                   Khoảnh khắc đặc biệt
+                </div>
+              )}
+
+              {(canEdit || canDelete) && (
+                <div className="mt-4 flex gap-2 border-t border-border/30 pt-3">
+                  {canEdit && (
+                    <button
+                      onClick={onEdit}
+                      className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    >
+                      <IconPencil size={14} />
+                      Edit
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={onDelete}
+                      className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-destructive"
+                    >
+                      <IconTrash size={14} />
+                      Delete
+                    </button>
+                  )}
                 </div>
               )}
             </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { Visibility } from "@/generated/prisma/client"
 import type { SessionPayload } from "@/src/lib/auth"
+import { getSessionCookie, verifySessionToken } from "@/src/lib/auth"
 import { errorResponse, handleError } from "@/src/lib/response"
 import { ErrorCode } from "@/src/lib/errors"
 import { assertAccess, assertPasswordUnlock } from "@/src/services/visibility.service"
@@ -77,9 +78,10 @@ export function withVisibility(
 /**
  * Middleware that enforces visibility for list endpoints.
  *
- * Does NOT block the request — instead passes the session to the handler,
- * which should use `visibilityWhereClause(role)` or `filterByVisibility()`
- * from the visibility service to filter results.
+ * Does NOT block unauthenticated requests — instead falls back to
+ * PUBLIC_VISITOR role so public content is still served.
+ * The handler should use `visibilityWhereClause(role)` or
+ * `filterByVisibility()` from the visibility service to filter results.
  *
  * Use this for GET list routes (e.g. GET /api/timeline).
  */
@@ -90,7 +92,15 @@ export function withVisibilityFilter(
   ) => Promise<NextResponse>,
 ) {
   return async (request: NextRequest): Promise<NextResponse> => {
-    return withAuth(request, handler)
+    const token = await getSessionCookie()
+    if (!token) {
+      return handler(request, { userId: "", role: "PUBLIC_VISITOR" })
+    }
+    const session = await verifySessionToken(token)
+    if (!session) {
+      return handler(request, { userId: "", role: "PUBLIC_VISITOR" })
+    }
+    return handler(request, session)
   }
 }
 

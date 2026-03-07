@@ -6,6 +6,8 @@ import {
   IconLock,
   IconClock,
   IconCalendar,
+  IconPencil,
+  IconTrash,
 } from "@tabler/icons-react"
 import type { LetterSummary } from "@/hooks/useLetters"
 
@@ -17,13 +19,8 @@ const cardGradients = [
 ] as const
 
 function isLocked(letter: LetterSummary): boolean {
-  if (
-    (letter.letterType === "TIME_LOCKED" || letter.letterType === "FUTURE_MESSAGE") &&
-    letter.unlockAt
-  ) {
-    return new Date(letter.unlockAt) > new Date()
-  }
-  return false
+  if (!letter.unlockAt) return false
+  return new Date(letter.unlockAt) > new Date()
 }
 
 function formatDate(dateString: string) {
@@ -38,9 +35,13 @@ interface LetterCardProps {
   letter: LetterSummary
   index: number
   onSelect: (id: string) => void
+  canEdit?: boolean
+  canDelete?: boolean
+  onEdit?: (letter: LetterSummary) => void
+  onDelete?: (id: string) => void
 }
 
-export function LetterCard({ letter, index, onSelect }: LetterCardProps) {
+export function LetterCard({ letter, index, onSelect, canEdit, canDelete, onEdit, onDelete }: LetterCardProps) {
   const palette = cardGradients[index % cardGradients.length]!
   const locked = isLocked(letter)
   const isPasswordLocked = letter.letterType === "PASSWORD_LOCKED"
@@ -105,10 +106,10 @@ export function LetterCard({ letter, index, onSelect }: LetterCardProps) {
           </h3>
 
           {/* Status */}
-          {locked && letter.unlockAt && (
+          {locked && (
             <p className="flex items-center gap-1.5 text-xs text-amber-600">
               <IconClock size={13} />
-              Mở vào {formatDate(letter.unlockAt)}
+              This letter will open in the future.
             </p>
           )}
 
@@ -129,6 +130,37 @@ export function LetterCard({ letter, index, onSelect }: LetterCardProps) {
                   {tag}
                 </span>
               ))}
+            </div>
+          )}
+
+          {(canEdit || canDelete) && (
+            <div className="mt-4 flex items-center gap-2 border-t border-white/30 pt-3">
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit?.(letter)
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/50 px-3 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-white/80 hover:text-foreground"
+                >
+                  <IconPencil size={13} />
+                  Sửa
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete?.(letter.id)
+                  }}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/50 px-3 py-1 text-xs font-medium text-red-500/70 transition-colors hover:bg-red-50 hover:text-red-600"
+                >
+                  <IconTrash size={13} />
+                  Xóa
+                </button>
+              )}
             </div>
           )}
         </div>

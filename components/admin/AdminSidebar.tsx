@@ -10,6 +10,8 @@ import {
   IconMail,
   IconSettings,
   IconLayoutDashboard,
+  IconUserPlus,
+  IconLink,
 } from "@tabler/icons-react"
 
 const navItems = [
@@ -17,6 +19,8 @@ const navItems = [
   { href: "/admin/events", label: "Events", icon: IconCalendarEvent },
   { href: "/admin/media", label: "Media", icon: IconPhoto },
   { href: "/admin/wishes", label: "Guest Wishes", icon: IconMessage },
+  { href: "/admin/guest-requests", label: "Guest Requests", icon: IconUserPlus },
+  { href: "/admin/invites", label: "Invite Links", icon: IconLink },
   { href: "/admin/mode", label: "System Mode", icon: IconSettings },
 ] as const
 
